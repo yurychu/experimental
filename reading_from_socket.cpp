@@ -8,24 +8,28 @@
 using namespace boost;
 
 
-void write_to_socket(asio::ip::tcp::socket & sock)
+std::string read_from_socket(asio::ip::tcp::socket & sock)
 {
-    std::string buf = "Hello";
+    const unsigned char MESSAGE_SIZE = 7;
+    char buf[MESSAGE_SIZE];
+    std::size_t total_bytes_read = 0;
 
-    std::size_t total_bytes_written = 0;
-
-    while (total_bytes_written != buf.length()){
-        total_bytes_written += sock.write_some(
-                asio::buffer(buf.c_str() + total_bytes_written, buf.length() - total_bytes_written)
+    while (total_bytes_read != MESSAGE_SIZE){
+        total_bytes_read += sock.read_some(
+                asio::buffer(buf + total_bytes_read,
+                             MESSAGE_SIZE - total_bytes_read)
         );
     }
+
+    return std::string(buf, total_bytes_read);
 }
 
 
 int main(){
-    // client writing to socket
+
+    // client reading from socket
     std::string raw_ip_address = "127.0.0.1";
-    u_short port_num = 8002;
+    u_short port_num = 8003;
 
     try {
         asio::ip::tcp::endpoint
@@ -34,13 +38,16 @@ int main(){
         asio::io_service ios;
         asio::ip::tcp::socket sock(ios, ep.protocol());
         sock.connect(ep);
-        write_to_socket(sock);
+
+        auto res = read_from_socket(sock);
+        std::cout << res << std::endl;
     }
     catch (system::system_error & e){
         std::cout << "Error occured! Error code = " << e.code()
                   << ". Message: " << e.what();
         return e.code().value();
     }
+
 
     return 0;
 }

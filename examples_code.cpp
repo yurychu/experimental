@@ -3,7 +3,16 @@
 
 #include <boost/asio.hpp>
 
-
+/*
+ * Debugging requests
+ *
+ * tcp
+ * ncat -l --keep-open 8002 --recv-only > /home/yurychu/tmp.txt
+ *
+ * udp
+ * ncat -l 8002 --keep-open --udp --sh-exec "cat > /dev/null"
+ *
+ */
 using namespace boost;
 
 int main1(){
@@ -305,7 +314,7 @@ void write_to_socket(asio::ip::tcp::socket & sock)
     std::size_t total_bytes_written = 0;
 
     while (total_bytes_written != buf.length()){
-        total_bytes_written += sock.write_some(
+        total_bytes_written += sock.write_some(  // garantee min one byte if buf not empty
                 asio::buffer(buf.c_str() + total_bytes_written, buf.length() - total_bytes_written)
         );
     }
