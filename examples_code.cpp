@@ -140,3 +140,197 @@ int main5(){
 
     return 0;
 }
+
+
+
+int main6(){
+
+    // binding to endpoint, all available
+    u_short port_num = 3333;
+    asio::ip::tcp::endpoint ep(
+            asio::ip::address_v4::any(),
+            port_num
+    );
+
+    asio::io_service ios;
+    asio::ip::tcp::acceptor acceptor(ios, ep.protocol());
+
+    boost::system::error_code ec;
+
+    acceptor.bind(ep, ec);
+    if (ec.value() != 0) {
+        std::cout << "Failed to bind the acceptor socket."
+                  << "Error code = " << ec.value() << ". Message: "
+                  << ec.message();
+        return ec.value();
+    }
+
+    return 0;
+}
+
+
+int main7(){
+
+    // udp server
+    u_short port_num = 3333;
+    asio::ip::udp::endpoint ep(
+            asio::ip::address_v4::any(),
+            port_num
+    );
+
+    asio::io_service ios;
+    asio::ip::udp::socket sock(ios, ep.protocol());
+
+    boost::system::error_code ec;
+
+    sock.bind(ep, ec);
+    if (ec.value() != 0) {
+        std::cout << "Failed to bind the socket."
+                  << "Error code = " << ec.value() << ". Message: "
+                  << ec.message();
+        return ec.value();
+    }
+
+    return 0;
+}
+
+int main8(){
+    // tcp client to active socket
+
+    std::string raw_ip_address = "127.0.0.1";
+    u_short port_num = 8002;
+
+    try {
+        asio::ip::tcp::endpoint ep(asio::ip::address::from_string(raw_ip_address), port_num);
+        asio::io_service ios;
+
+        asio::ip::tcp::socket sock(ios, ep.protocol());
+        sock.connect(ep);
+
+    }
+    catch (system::system_error & e){
+        std::cout << "Error occured! Error code = " << e.code()
+                  << ". Message: " << e.what();
+        return e.code().value();
+    }
+
+    return 0;
+}
+
+
+int main9(){
+    // listening incoming on server
+
+    const int BACKLOG_SIZE = 30;
+
+    u_short port_num = 8002;
+
+    asio::ip::tcp::endpoint ep(asio::ip::address_v4::any(), port_num);
+
+    asio::io_service ios;
+
+    try {
+        asio::ip::tcp::acceptor acceptor(ios, ep.protocol());
+        acceptor.bind(ep);
+
+        acceptor.listen(BACKLOG_SIZE);
+
+        asio::ip::tcp::socket sock(ios);
+
+        acceptor.accept(sock); // blocking
+
+    }
+    catch (system::system_error & e){
+        std::cout << "Error occured! Error code = " << e.code()
+                  << ". Message: " << e.what();
+        return e.code().value();
+    }
+
+
+    return 0;
+}
+
+
+int main10(){
+    // const buffers send hello
+
+    const std::string buf = "Hello";
+
+    asio::const_buffers_1 output_buf = asio::buffer(buf);
+
+    return 0;
+}
+
+
+int main11(){
+    // preparing buffer to receiving data
+    const size_t BUF_SIZE_BYTES = 20;
+
+    std::unique_ptr<char[]> buf(new char[BUF_SIZE_BYTES]);
+
+    asio::mutable_buffers_1 input_buf =
+            asio::buffer(static_cast<void*>(buf.get()), BUF_SIZE_BYTES);
+
+    // input_buf can be used in asio
+
+
+    return 0;
+}
+
+
+int main12(){
+    // streams examples
+
+    asio::streambuf buf;
+
+    std::ostream output(&buf);
+
+    output << "Mesaage1\nMessage2\n";
+
+    std::istream input(&buf);
+    std::string message;
+    std::getline(input, message);
+
+    std::cout << message << std::endl;  // contains Message1
+
+    return 0;
+}
+
+
+
+void write_to_socket(asio::ip::tcp::socket & sock)
+{
+    std::string buf = "Hello";
+
+    std::size_t total_bytes_written = 0;
+
+    while (total_bytes_written != buf.length()){
+        total_bytes_written += sock.write_some(
+                asio::buffer(buf.c_str() + total_bytes_written, buf.length() - total_bytes_written)
+        );
+    }
+}
+
+
+int main13(){
+    // client writing to socket
+    std::string raw_ip_address = "127.0.0.1";
+    u_short port_num = 8002;
+
+    try {
+        asio::ip::tcp::endpoint
+                ep(asio::ip::address::from_string(raw_ip_address), port_num);
+
+        asio::io_service ios;
+        asio::ip::tcp::socket sock(ios, ep.protocol());
+        sock.connect(ep);
+        write_to_socket(sock);
+    }
+    catch (system::system_error & e){
+        std::cout << "Error occured! Error code = " << e.code()
+                  << ". Message: " << e.what();
+        return e.code().value();
+    }
+
+    return 0;
+}

@@ -5,13 +5,17 @@ set(CMAKE_CXX_STANDARD 14)
 
 
 link_directories(
-        /home/yurychu/Developing/installed_libs/boost166/lib
-        /home/yurychu/Developing/installed_libs/ocv320pure/lib
+#        /home/yurychu/Developing/installed_libs/boost166/lib
+        /home/yurych4/developing/builds/builded_libs/lib
+#        /home/yurychu/Developing/installed_libs/ocv320pure/lib
+        /home/yurych4/developing/builds/builded_libs/opencv_native_lib320/lib
 )
 
 include_directories(
-        /home/yurychu/Developing/installed_libs/boost166/include
-        /home/yurychu/Developing/installed_libs/ocv320pure/include
+#        /home/yurychu/Developing/installed_libs/boost166/include
+        /home/yurych4/developing/builds/builded_libs/include
+#        /home/yurychu/Developing/installed_libs/ocv320pure/include
+        /home/yurych4/developing/builds/builded_libs/opencv_native_lib320/include
 )
 
 
