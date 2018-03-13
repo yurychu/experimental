@@ -52,16 +52,37 @@ int main_sync(){
 }
 
 
-struct Session
+struct SessionSome
 {
     std::shared_ptr <asio::ip::tcp::socket> sock;
     std::string buf;
     std::size_t total_bytes_written;
 };
 
+struct SessionSmallerWrite
+{
+    std::shared_ptr<asio::ip::tcp::socket> sock;
+    std::string buf;
+};
+
+void write_handler_callback(
+        const boost::system::error_code ec,
+        std::size_t bytes_transferred,
+        std::shared_ptr<SessionSmallerWrite> s
+)
+{
+    if (ec.value() != 0){
+        std::cout << "Error occured! Error code = "
+                  << ec.value()
+                  << ". Message: " << ec.message();
+        return;
+    }
+    // here are good and all data has been written to sock
+}
 
 
-void write_handler_callback(const boost::system::error_code & ec, std::size_t bytes_transferred, std::shared_ptr<Session> s)
+void write_some_handler_callback(const boost::system::error_code &ec, std::size_t bytes_transferred,
+                                 std::shared_ptr<SessionSome> s)
 {
     if (ec.value() != 0){
         std::cout << "Error occured! Error code = "
@@ -79,13 +100,14 @@ void write_handler_callback(const boost::system::error_code & ec, std::size_t by
             asio::buffer(
                     s->buf.c_str() + s->total_bytes_written, s->buf.length() - s->total_bytes_written
             ),
-            std::bind(write_handler_callback, std::placeholders::_1, std::placeholders::_2, s)
+            std::bind(write_some_handler_callback, std::placeholders::_1, std::placeholders::_2, s)
     );
 }
 
-void write_to_socket_async(std::shared_ptr<asio::ip::tcp::socket> sock)
+
+void write_some_to_socket_async(std::shared_ptr<asio::ip::tcp::socket> sock)
 {
-    std::shared_ptr<Session> s(new Session);
+    std::shared_ptr<SessionSome> s(new SessionSome);
 
     s->buf = std::string("Hi there!!!");
     s->total_bytes_written = 0;
@@ -93,7 +115,7 @@ void write_to_socket_async(std::shared_ptr<asio::ip::tcp::socket> sock)
 
     s->sock->async_write_some(
             asio::buffer(s->buf),
-            std::bind(write_handler_callback, std::placeholders::_1, std::placeholders::_2, s)
+            std::bind(write_some_handler_callback, std::placeholders::_1, std::placeholders::_2, s)
     );
 }
 
@@ -112,7 +134,7 @@ int main(){
                 new asio::ip::tcp::socket(ios, ep.protocol())
         );
         sock->connect(ep);
-        write_to_socket_async(sock);
+        write_some_to_socket_async(sock);
         ios.run();
     }
     catch (system::system_error & e){
