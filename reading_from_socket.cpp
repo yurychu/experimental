@@ -131,7 +131,7 @@ void read_some_from_socket(std::shared_ptr<asio::ip::tcp::socket> sock)
     );
 }
 
-int main()
+int main_read_some_async()
 {
     std::string raw_ip_address = "127.0.0.1";
     u_short port_num = 8003;
@@ -156,4 +156,24 @@ int main()
     }
 
     return 0;
+}
+
+struct SessionReadingSmaller
+{
+    std::shared_ptr<asio::ip::tcp::socket> sock;
+    std::unique_ptr<char[]> buf;
+    u_int buf_size;
+};
+
+void callback_smaller(const boost::system::error_code & ec, std::size_t bytes_transferred, std::shared_ptr<SessionReadingSmaller> s)
+{
+    if (ec != 0) {
+        std::cout << "Error occured! Error code = "
+                  << ec.value()
+                  << ". Message: " << ec.message();
+        return;
+    }
+    // Here we know that the reading has completed
+    // successfully and the buffer is full with
+    // data read from the socket.
 }

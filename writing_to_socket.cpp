@@ -59,11 +59,13 @@ struct SessionSome
     std::size_t total_bytes_written;
 };
 
+
 struct SessionSmallerWrite
 {
     std::shared_ptr<asio::ip::tcp::socket> sock;
     std::string buf;
 };
+
 
 void write_handler_callback(
         const boost::system::error_code ec,

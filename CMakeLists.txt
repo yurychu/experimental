@@ -41,6 +41,16 @@ add_executable(
         protocol.hpp
 )
 
+add_executable(
+        other_manipulation
+        other_manipulation.cpp
+)
+
+add_executable(
+        cook_client
+        cook_client.cpp
+)
+
 
 target_link_libraries(
         stream_server
@@ -70,6 +80,18 @@ target_link_libraries(
 
 target_link_libraries(
         reading_from_socket
+        boost_system
+        pthread
+)
+
+target_link_libraries(
+        other_manipulation
+        boost_system
+        pthread
+)
+
+target_link_libraries(
+        cook_client
         boost_system
         pthread
 )
