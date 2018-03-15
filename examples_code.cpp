@@ -343,3 +343,13 @@ int main13(){
 
     return 0;
 }
+
+
+float doMultiplication (float num1, float num2 ) {
+    return num1 * num2; }
+
+typedef float(*pt2Func)(float, float);
+
+pt2Func *myFnPtr = &doMultiplication;
+
+float result = (*myFnPtr)(2.0, 5.1);
