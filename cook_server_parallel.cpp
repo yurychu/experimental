@@ -94,78 +94,78 @@ private:
     asio::ip::tcp::acceptor m_acceptor;
 };
 
-//
-//class Server
-//{
-//public:
-//    Server()
-//            : m_stop(false)
-//    {
-//
-//    }
-//
-//    void start(u_short port_num)
-//    {
-//        m_thread.reset(
-//                new std::thread(
-//                        [this, port_num]()
-//                        {
-//                            this->run(port_num);
-//                        }
-//                )
-//        );
-//        std::cout << "Server start method end" << std::endl;
-//    }
-//
-//    void stop()
-//    {
-//        m_stop.store(true);
-//        m_thread->join();
-//    }
-//
-//private:
-//
-//    void run(u_short port_num)
-//    {
-//        Acceptor acc(m_ios, port_num);
-//
-//        while(!m_stop.load()){
-//            std::cout << "Start Cycle iteration" << std::endl;
-//            acc.accept();
-//            std::cout << "End cycle iteration" << std::endl;
-//        }
-//
-//    }
-//
-//private:
-//    std::unique_ptr<std::thread> m_thread;
-//    std::atomic<bool> m_stop;
-//    asio::io_service m_ios;
-//};
-//
-//
-//
-//int main()
-//{
-//    std::cout << "Server starting..." << std::endl;
-//
-//    u_short port_num = 8003;
-//
-//    try {
-//        Server srv;
-//        srv.start(port_num);
-//
-//        std::cout << "Sleeping" << std::endl;
-//        boost::this_thread::sleep_for(boost::chrono::seconds(30));
-//        std::cout << "End sleep... stopping server..." << std::endl;
-//
-//        srv.stop();
-//    }
-//    catch (system::system_error & e){
-//        std::cout  << "Error occured! Error code = "
-//                   <<e.code() << ". Message: "
-//                   <<e.what();
-//    }
-//
-//    return 0;
-//};
+
+class Server
+{
+public:
+    Server()
+            : m_stop(false)
+    {
+
+    }
+
+    void start(u_short port_num)
+    {
+        m_thread.reset(
+                new std::thread(
+                        [this, port_num]()
+                        {
+                            this->run(port_num);
+                        }
+                )
+        );
+        std::cout << "Server start method end" << std::endl;
+    }
+
+    void stop()
+    {
+        m_stop.store(true);
+        m_thread->join();
+    }
+
+private:
+
+    void run(u_short port_num)
+    {
+        Acceptor acc(m_ios, port_num);
+
+        while(!m_stop.load()){
+            std::cout << "Start Cycle iteration" << std::endl;
+            acc.accept();
+            std::cout << "End cycle iteration" << std::endl;
+        }
+
+    }
+
+private:
+    std::unique_ptr<std::thread> m_thread;
+    std::atomic<bool> m_stop;
+    asio::io_service m_ios;
+};
+
+
+
+int main()
+{
+    std::cout << "Server starting..." << std::endl;
+
+    u_short port_num = 8003;
+
+    try {
+        Server srv;
+        srv.start(port_num);
+
+        std::cout << "Sleeping" << std::endl;
+        boost::this_thread::sleep_for(boost::chrono::seconds(30));
+        std::cout << "End sleep... stopping server..." << std::endl;
+
+        srv.stop();
+    }
+    catch (system::system_error & e){
+        std::cout  << "Error occured! Error code = "
+                   <<e.code() << ". Message: "
+                   <<e.what();
+    }
+
+    return 0;
+};
