@@ -61,6 +61,10 @@ add_executable(
         cook_server_parallel.cpp
 )
 
+add_executable(
+        cook_server_async
+        cook_server_async.cpp
+)
 
 target_link_libraries(
         stream_server
@@ -115,6 +119,13 @@ target_link_libraries(
 
 target_link_libraries(
         cook_server_parallel
+        boost_system
+        boost_thread
+        pthread
+)
+
+target_link_libraries(
+        cook_server_async
         boost_system
         boost_thread
         pthread
