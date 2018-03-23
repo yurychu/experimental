@@ -66,6 +66,11 @@ add_executable(
         cook_server_async.cpp
 )
 
+add_executable(
+        cook_http_client
+        cook_http_client.cpp
+)
+
 target_link_libraries(
         stream_server
         boost_system
@@ -126,6 +131,13 @@ target_link_libraries(
 
 target_link_libraries(
         cook_server_async
+        boost_system
+        boost_thread
+        pthread
+)
+
+target_link_libraries(
+        cook_http_client
         boost_system
         boost_thread
         pthread
