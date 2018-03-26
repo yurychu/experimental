@@ -71,6 +71,11 @@ add_executable(
         cook_http_client.cpp
 )
 
+add_executable(
+        module_one
+        module_one.cpp
+)
+
 target_link_libraries(
         stream_server
         boost_system
@@ -138,6 +143,13 @@ target_link_libraries(
 
 target_link_libraries(
         cook_http_client
+        boost_system
+        boost_thread
+        pthread
+)
+
+target_link_libraries(
+        module_one
         boost_system
         boost_thread
         pthread
