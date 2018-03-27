@@ -344,7 +344,7 @@ private:
 
     void on_headers_received(const boost::system::error_code& ec, std::size_t bytes_transferred)
     {
-        if (ec != 0) {
+        if (ec.value() != 0) {
             on_finish(ec);
             return;
         }
