@@ -28,7 +28,6 @@ public:
 
     }
 
-
     void start_communicate()
     {
         auto self(shared_from_this());
@@ -45,15 +44,43 @@ private:
     void on_request_received(const boost::system::error_code & ec, std::size_t bytes_transferred)
     {
         if (!ec.value()){
+            auto self(shared_from_this());
             std::cout << std::istream(&itsRequest).rdbuf() << std::endl;
+
+            asio::async_write(*itsSocket, asio::buffer("-- Was taken --\n"),
+                              [this, self](const boost::system::error_code & ec,
+                                     std::size_t bytes_transferred)
+                              {
+                                  this->on_response_sent(ec, bytes_transferred);
+                              }
+            );
+
         }
         else {
             std::cout << "Error occured! Error code = "
                       << ec.value()
                       << ". Message: " << ec.message();
         }
-
     }
+
+    void on_response_sent(const boost::system::error_code & ec, std::size_t bytes_transferred)
+    {
+        if (ec.value() != 0){
+            std::cout << "Error occured! Error code = "
+                      << ec.value()
+                      << ". Message: " << ec.message();
+        }
+        else {
+            auto self(shared_from_this());
+            asio::async_read_until(*itsSocket, itsRequest, '\n',
+                                   [this, self]
+                                           (const boost::system::error_code &ec,
+                                            std::size_t bytes_transferred) {
+                                       this->on_request_received(ec, bytes_transferred);
+                                   });
+        }
+    }
+
 };
 
 
@@ -64,13 +91,16 @@ private:
     ipc_protocol::acceptor itsAcceptor;
 
 public:
-    Acceptor(asio::io_service & ios, const std::string & acc_name)
+    Acceptor(asio::io_service & ios, std::string acc_name)
     : itsIos(ios),
       itsAcceptor(ios)
     {
+        if(acc_name.find('.') == std::string::npos){
+            acc_name += ".socket";
+        }
         ::unlink(acc_name.c_str());
-
         ipc_protocol::endpoint ep(acc_name);
+
         itsAcceptor.open(ep.protocol());
         itsAcceptor.bind(ep);
     }
@@ -99,6 +129,9 @@ private:
         if (!ec.value()){
             auto session = std::make_shared<Session>(sock);
             session->start_communicate();
+
+            // may be check if cancelling
+            this->init_accept();
         }
         else {
             std::cout<< "Error occured! Error code = "
@@ -106,7 +139,7 @@ private:
                      << ". Message: " <<ec.message();
         }
 
-        this->init_accept();
+
 
     }
 
@@ -120,9 +153,9 @@ private:
     Acceptor itsAcceptor;
 
 public:
-    explicit Server(asio::io_service & ios)
+    explicit Server(asio::io_service & ios, const std::string & ep_name)
             : itsIos(ios),
-              itsAcceptor(ios, "module_one.socket")
+              itsAcceptor(ios, ep_name)
     {
         itsAcceptor.start();
     }
@@ -135,7 +168,6 @@ class Client
 {
 private:
     asio::io_service & itsIos;
-
 
 public:
     explicit Client(asio::io_service & ios)
@@ -156,8 +188,8 @@ private:
     Client itsClient;
 
 public:
-    Module()
-    : itsServer(itsIos),
+    explicit Module(const std::string & name)
+    : itsServer(itsIos, name),
       itsClient(itsIos)
     {
 
@@ -177,13 +209,9 @@ public:
 
 int main()
 {
-    Module module;
+    Module module("module_one");
 
     module.start_ios();
 
-    std::cout << "Start sleeping" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(30));
-
-    module.stop_ios();
-
+    return 0;
 }
