@@ -13,6 +13,87 @@ namespace asio = boost::asio;
 using ipc_protocol = boost::asio::local::stream_protocol;
 
 
+using HeaderPartBufType = std::array<char, 8>;
+using BodyPartBufType = std::array<char, (8 << 17)>;  /* (8 << 17) 1048576 */
+
+using SomeBufType = std::array<char, 16>;
+
+
+class Part
+{
+private:
+    HeaderPartBufType itsHeaderBuf;
+    BodyPartBufType itsBodyBuf;
+
+public:
+    Part() = default;
+    ~Part() = default;
+
+    HeaderPartBufType & get_header_buf()
+    {
+        return itsHeaderBuf;
+    }
+
+    BodyPartBufType & get_body_buf()
+    {
+        return itsBodyBuf;
+    }
+
+    size_t get_length_for_read()
+    {
+        std::string str(itsHeaderBuf.data(), itsHeaderBuf.size());
+        return std::stoul(str);
+    }
+
+};
+
+
+class Packet
+{
+private:
+    Part itsMetaData;
+    Part itsData;
+
+public:
+    Packet() = default;
+    ~Packet() = default;
+
+    Part& meta_data_part(){
+        return itsMetaData;
+    }
+
+    Part& data_part(){
+        return itsData;
+    }
+
+};
+
+
+class TaskPacker
+{
+private:
+    bool itsHereClear;
+
+public:
+    TaskPacker()
+            :itsHereClear(true)
+    {
+
+    }
+    ~TaskPacker() = default;
+
+    void eat(const SomeBufType & some_buf)
+    {
+        std::string meta_data_len(some_buf.data(), 4);
+        std::string data_len(some_buf.data()+4, 4);
+
+        std::cout << "Metadata len: " << meta_data_len
+                  << "Data len: " << data_len
+                  << std::endl;
+
+    }
+};
+
 class Storage
 {
 private:
@@ -45,6 +126,7 @@ public:
 
 };
 
+
 class Session
         : public std::enable_shared_from_this<Session>
 {
@@ -52,174 +134,55 @@ private:
     std::shared_ptr<Storage> itsStorage;
     std::shared_ptr<ipc_protocol::socket> itsSocket;
 
-    size_t itsMetadataLength;
-    size_t itsDataLength;
+    std::unique_ptr<TaskPacker> itsTaskPacker;
 
-    asio::streambuf itsStatusLine;
-    asio::streambuf itsMetaData;
-    asio::streambuf itsData;
-
-    asio::streambuf itsMessageBuf;
+    SomeBufType itsSomeBuf;
 
 public:
     explicit Session(std::shared_ptr<ipc_protocol::socket> socket, std::shared_ptr<Storage> storage)
             : itsStorage(storage),
-              itsSocket(socket)
+              itsSocket(socket),
+              itsTaskPacker(std::make_unique<TaskPacker>())
     {
+        std::cout << "Created new session" << std::endl;
     }
 
     void start_communicate()
     {
-       this->read_message();
+       this->fill_the_buffer();
     }
 
 private:
 
-    void read_message(){
-        auto self(shared_from_this());
-        asio::async_read_until(*itsSocket, itsMessageBuf, "\n\n",
-                               [this, self]
-                                       (const boost::system::error_code & ec,
-                                        std::size_t bytes_transferred)
-                               {
-                                   this->on_read_message(ec, bytes_transferred);
-                               });
-
-    }
-
-    void on_read_message(const boost::system::error_code & ec, std::size_t bytes_transferred)
+    void fill_the_buffer()
     {
-        if (!ec.value()) {
-
-            std::string str {asio::buffers_begin(itsMessageBuf.data()), asio::buffers_end(itsMessageBuf.data())};
-
-            std::cout << "Readed message: " << str << std::endl;
-
-            this->read_message();
-        }
-        else {
-            std::cout << "Error occured! Error code = "
-                      << ec.value()
-                      << ". Message: " << ec.message();
-        }
-    }
-
-    void read_status_line(){
         auto self(shared_from_this());
-        asio::async_read_until(*itsSocket, itsStatusLine, "\n\n",
-                               [this, self]
-                                       (const boost::system::error_code & ec,
-                                        std::size_t bytes_transferred)
-                               {
-                                   this->on_read_status_line(ec, bytes_transferred);
-                               });
-    }
-
-    void on_read_status_line(const boost::system::error_code & ec, std::size_t bytes_transferred)
-    {
-        if (!ec.value()){
-            std::istream input(&itsStatusLine);
-
-            std::cout << "Readed status line: " << input.rdbuf() << std::endl;
-
-            std::string check_phrase;
-            std::string meta_data_length;
-            std::string data_length;
-
-            input >> check_phrase;
-            std::cout << "Check phrase: " << check_phrase << std::endl;
-
-            input >> meta_data_length;
-            std::cout << "Meta data lenght: " << meta_data_length << std::endl;
-            itsMetadataLength = std::stoul(meta_data_length);
-
-            input >> data_length;
-            std::cout << "Data lenght: " << data_length << std::endl;
-            itsDataLength = std::stoul(data_length);
-
-            input.get();
-
-            this->read_meta_data();
-        }
-        else {
-            std::cout << "Error occured! Error code = "
-                      << ec.value()
-                      << ". Message: " << ec.message();
-        }
-    }
-
-    void read_meta_data()
-    {
-        std::cout << "itsMetadata: " << itsMetadataLength << std::endl;
-
-        auto self(shared_from_this());
-        asio::async_read(*itsSocket, itsMetaData.prepare(itsMetadataLength),
+        asio::async_read(*itsSocket, asio::buffer(itsSomeBuf),
                          [this, self]
                                  (const boost::system::error_code & ec,
-                                        std::size_t bytes_transferred)
-                               {
-                                   this->on_read_metadata(ec, bytes_transferred);
-                               });
+                                  std::size_t bytes_transferred)
+                         {
+                             this->parse_to_packet(ec, bytes_transferred);
+                         });
     }
 
-    void on_read_metadata(const boost::system::error_code & ec, std::size_t bytes_transferred)
-    {
+
+    void parse_to_packet(const boost::system::error_code & ec, std::size_t bytes_transferred){
         if (!ec.value()) {
+            std::cout << "Bytes Transferred: " << bytes_transferred << std::endl;
+            std::cout << std::string(itsSomeBuf.data(), itsSomeBuf.size()) << std::endl;
 
-            std::string str{asio::buffers_begin(itsMetaData.data()), asio::buffers_end(itsMetaData.data())};
+            itsTaskPacker->eat(itsSomeBuf);
 
-            std::cout << "Readed metadata: " << str << std::endl;
-
-            this->read_message();
+            this->fill_the_buffer();
         }
         else {
             std::cout << "Error occured! Error code = "
                       << ec.value()
                       << ". Message: " << ec.message();
         }
+
     }
-
-//    void read_data()
-//    {
-//        auto self(shared_from_this());
-//        asio::async_read(*itsSocket, asio::buffer(itsData, itsDataLength),
-//                          [this, self](const boost::system::error_code &ec,
-//                                       std::size_t bytes_transferred) {
-//                              this->on_read_data(ec, bytes_transferred);
-//                          }
-//        );
-//    }
-//
-//    void on_read_data(const boost::system::error_code & ec, std::size_t bytes_transferred)
-//    {
-//        if (!ec.value()){
-//            std::cout << std::string(itsData.begin(), itsData.end()) << std::endl;
-//            this->read_status_line();
-//        }
-//        else {
-//            std::cout << "Error occured! Error code = "
-//                      << ec.value()
-//                      << ". Message: " << ec.message();
-//        }
-//    }
-
-//    void on_response_sent(const boost::system::error_code & ec, std::size_t bytes_transferred)
-//    {
-//        if (ec.value() != 0){
-//            std::cout << "Error occured! Error code = "
-//                      << ec.value()
-//                      << ". Message: " << ec.message();
-//        }
-//        else {
-//            auto self(shared_from_this());
-//            asio::async_read_until(*itsSocket, itsRequest, '\n',
-//                                   [this, self]
-//                                           (const boost::system::error_code &ec,
-//                                            std::size_t bytes_transferred) {
-//                                       this->on_request_received(ec, bytes_transferred);
-//                                   });
-//        }
-//    }
 
 };
 
