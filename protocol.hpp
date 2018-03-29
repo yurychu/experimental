@@ -7,29 +7,95 @@
 
 namespace prtcl {
 
+    constexpr u_char START_WORD_LEN_BYTES = 8;
+    constexpr u_char META_DATA_LEN_BYTES = 8;
+    constexpr u_char DATA_LEN_BYTES = 8;
+    constexpr u_char SUM_LENGHT_BYTES = START_WORD_LEN_BYTES + META_DATA_LEN_BYTES + DATA_LEN_BYTES;
+
+    using HeaderBufferType = std::array<char, SUM_LENGHT_BYTES>;
+
     class Header
     {
-    public:
-        enum { fixed_size = 4 };
-
     private:
-        std::array<int8_t, fixed_size> itsData;
+        HeaderBufferType itsBuffer;
 
     public:
-        template <std::size_t SIZE>
-        explicit Header(std::array<int8_t, SIZE> & data)
-                : itsData(data) {}
-
+        Header() = default;
         ~Header() = default;
 
-        size_t get_length() const { return itsData.size(); }
-        void print_data() const { std::cout << atoi((char*)itsData.data()) << std::endl; }
+        HeaderBufferType & get_buffer()
+        {
+            return itsBuffer;
+        }
+
+        size_t get_metadata_size() const
+        {
+            std::string res(itsBuffer.data() + START_WORD_LEN_BYTES, META_DATA_LEN_BYTES);
+            return std::stoul(res);
+        }
+
+        size_t get_data_size() const
+        {
+            std::string res(itsBuffer.data() + START_WORD_LEN_BYTES + META_DATA_LEN_BYTES, DATA_LEN_BYTES);
+            return std::stoul(res);
+        }
 
     };
 
-    class Body {
 
+    using BodyBufferType = std::array<char, (8 << 17)>;  /* (8 << 17) 1048576 */
+
+    class Body
+    {
+    private:
+        BodyBufferType itsBuffer;
+        size_t itsMetadataSize;
+        size_t itsDataSize;
+
+    public:
+        Body()
+                : itsBuffer(),
+                  itsMetadataSize(0),
+                  itsDataSize(0)
+        {
+        }
+
+        explicit Body(const Header & header)
+                : itsBuffer(),
+                  itsMetadataSize(header.get_metadata_size()),
+                  itsDataSize(header.get_data_size())
+        {
+        }
+
+        void set_header(const Header & header)
+        {
+            itsMetadataSize = header.get_metadata_size();
+            itsDataSize = header.get_data_size();
+        }
+
+        size_t get_sum_size() const
+        {
+            return itsMetadataSize + itsDataSize;
+        }
+
+        BodyBufferType & get_buffer()
+        {
+            return itsBuffer;
+        }
+
+        std::string get_metadata() const
+        {
+            return std::string(itsBuffer.data(), itsMetadataSize);
+        }
+
+        std::string get_data() const
+        {
+            return std::string(itsBuffer.data() + itsMetadataSize, itsDataSize);
+        }
+
+        ~Body() = default;
     };
+
 }
 
 #endif //EXPERIMENTAL_SYSTEM_PROTOCOL_HPP

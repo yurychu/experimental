@@ -353,3 +353,37 @@ typedef float(*pt2Func)(float, float);
 pt2Func *myFnPtr = &doMultiplication;
 
 float result = (*myFnPtr)(2.0, 5.1);
+
+
+class Storage
+{
+private:
+    std::map<int, std::string> itsStorage;
+
+public:
+    Storage(){
+        std::cout << "Create storage" << std::endl;
+        itsStorage[1] = "Resource One";
+        itsStorage[2] = "Resource Two";
+        itsStorage[3] = "Resource Three";
+        itsStorage[4] = "Resource Four";
+        itsStorage[5] = "Resource Five";
+    }
+    ~Storage() = default;
+
+    std::string get(u_int id_resource)
+    {
+        std::string result;
+        auto it = itsStorage.find(id_resource);
+
+        if (it != itsStorage.end()){
+            result = it->second;
+        }
+        else {
+            result = "Not found resource with id: " + std::to_string(id_resource);
+        }
+
+        return result;
+    }
+
+};

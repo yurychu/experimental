@@ -74,6 +74,8 @@ add_executable(
 add_executable(
         module_one
         module_one.cpp
+        protocol.hpp
+        FunctionalServer.hpp
 )
 
 target_link_libraries(
