@@ -76,6 +76,8 @@ add_executable(
         module_one.cpp
         protocol.hpp
         FunctionalServer.hpp
+        FunctionalClient.hpp
+        TaskFunctional.hpp
 )
 
 target_link_libraries(

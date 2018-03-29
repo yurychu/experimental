@@ -8,27 +8,9 @@
 
 #include "protocol.hpp"
 #include "FunctionalServer.hpp"
+#include "FunctionalClient.hpp"
 
-
-namespace asio = boost::asio;
 namespace cmt = communication;
-
-using ipc_protocol = boost::asio::local::stream_protocol;
-
-
-class Client
-{
-private:
-    asio::io_service & itsIos;
-
-public:
-    explicit Client(asio::io_service & ios)
-            : itsIos(ios)
-    {
-    }
-
-    ~Client() = default;
-};
 
 
 class Module
@@ -47,7 +29,7 @@ public:
     void start(){
         asio::io_service itsIos;
 
-        auto client = std::make_shared<Client>(itsIos);
+        auto client = std::make_shared<cmt::Client>(itsIos);
         auto func_part = std::make_shared<cmt::FunctionalPart>();
         auto server = std::make_shared<cmt::Server>(itsIos, itsName, func_part);
 
@@ -62,7 +44,6 @@ public:
 int main()
 {
     Module module("module_one");
-
     module.start();
 
     return 0;

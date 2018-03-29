@@ -11,6 +11,7 @@
 #include <boost/asio.hpp>
 
 #include "protocol.hpp"
+#include "TaskFunctional.hpp"
 
 
 namespace asio = boost::asio;
@@ -180,7 +181,7 @@ namespace communication
             else {
                 std::cout<< "Error occured! Error code = "
                          << ec.value()
-                         << ". Message: " <<ec.message();
+                         << ". Message: " << ec.message();
             }
 
         }
@@ -188,7 +189,6 @@ namespace communication
     };
 
 }
-
 
 
 #endif //EXPERIMENTAL_SYSTEM_FUNCTIONALSERVER_HPP
