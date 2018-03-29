@@ -14,85 +14,100 @@ using ipc_protocol = boost::asio::local::stream_protocol;
 
 
 using HeaderPartBufType = std::array<char, 8>;
-using BodyPartBufType = std::array<char, (8 << 17)>;  /* (8 << 17) 1048576 */
+
 
 using SomeBufType = std::array<char, 16>;
 
 
-class Part
+constexpr u_char START_WORD_LEN_BYTES = 8;
+constexpr u_char META_DATA_LEN_BYTES = 8;
+constexpr u_char DATA_LEN_BYTES = 8;
+constexpr u_char SUM_LENGHT_BYTES = START_WORD_LEN_BYTES + META_DATA_LEN_BYTES + DATA_LEN_BYTES;
+
+using HeaderBufferType = std::array<char, SUM_LENGHT_BYTES>;
+
+class Header
 {
 private:
-    HeaderPartBufType itsHeaderBuf;
-    BodyPartBufType itsBodyBuf;
+    HeaderBufferType itsBuffer;
 
 public:
-    Part() = default;
-    ~Part() = default;
+    Header() = default;
+    ~Header() = default;
 
-    HeaderPartBufType & get_header_buf()
+    HeaderBufferType & get_buffer()
     {
-        return itsHeaderBuf;
+        return itsBuffer;
     }
 
-    BodyPartBufType & get_body_buf()
+    size_t get_metadata_size() const
     {
-        return itsBodyBuf;
+        std::string res(itsBuffer.data() + START_WORD_LEN_BYTES, META_DATA_LEN_BYTES);
+        return std::stoul(res);
     }
 
-    size_t get_length_for_read()
+    size_t get_data_size() const
     {
-        std::string str(itsHeaderBuf.data(), itsHeaderBuf.size());
-        return std::stoul(str);
+        std::string res(itsBuffer.data() + START_WORD_LEN_BYTES + META_DATA_LEN_BYTES, DATA_LEN_BYTES);
+        return std::stoul(res);
     }
 
 };
 
 
-class Packet
+using BodyBufferType = std::array<char, (8 << 17)>;  /* (8 << 17) 1048576 */
+
+class Body
 {
 private:
-    Part itsMetaData;
-    Part itsData;
+    BodyBufferType itsBuffer;
+    size_t itsMetadataSize;
+    size_t itsDataSize;
 
 public:
-    Packet() = default;
-    ~Packet() = default;
-
-    Part& meta_data_part(){
-        return itsMetaData;
+    Body()
+    : itsBuffer(),
+      itsMetadataSize(0),
+      itsDataSize(0)
+    {
     }
 
-    Part& data_part(){
-        return itsData;
+    explicit Body(const Header & header)
+            : itsBuffer(),
+              itsMetadataSize(header.get_metadata_size()),
+              itsDataSize(header.get_data_size())
+    {
     }
 
+    void set_header(const Header & header)
+    {
+        itsMetadataSize = header.get_metadata_size();
+        itsDataSize = header.get_data_size();
+    }
+
+    size_t get_sum_size() const
+    {
+        return itsMetadataSize + itsDataSize;
+    }
+
+    BodyBufferType & get_buffer()
+    {
+        return itsBuffer;
+    }
+
+    std::string get_metadata() const
+    {
+        return std::string(itsBuffer.data(), itsMetadataSize);
+    }
+
+    std::string get_data() const
+    {
+        return std::string(itsBuffer.data() + itsMetadataSize, itsDataSize);
+    }
+
+    ~Body() = default;
 };
 
-
-class TaskPacker
-{
-private:
-    bool itsHereClear;
-
-public:
-    TaskPacker()
-            :itsHereClear(true)
-    {
-
-    }
-    ~TaskPacker() = default;
-
-    void eat(const SomeBufType & some_buf)
-    {
-        std::string meta_data_len(some_buf.data(), 4);
-        std::string data_len(some_buf.data()+4, 4);
-
-        std::cout << "Metadata len: " << meta_data_len
-                  << "Data len: " << data_len
-                  << std::endl;
-
-    }
-};
 
 class Storage
 {
@@ -134,54 +149,78 @@ private:
     std::shared_ptr<Storage> itsStorage;
     std::shared_ptr<ipc_protocol::socket> itsSocket;
 
-    std::unique_ptr<TaskPacker> itsTaskPacker;
+    Header itsHeader;
+    Body itsBody;
 
     SomeBufType itsSomeBuf;
 
 public:
     explicit Session(std::shared_ptr<ipc_protocol::socket> socket, std::shared_ptr<Storage> storage)
             : itsStorage(storage),
-              itsSocket(socket),
-              itsTaskPacker(std::make_unique<TaskPacker>())
+              itsSocket(socket)
     {
         std::cout << "Created new session" << std::endl;
     }
 
     void start_communicate()
     {
-       this->fill_the_buffer();
+       this->read_header();
     }
 
 private:
 
-    void fill_the_buffer()
+    void read_header()
     {
         auto self(shared_from_this());
-        asio::async_read(*itsSocket, asio::buffer(itsSomeBuf),
+        asio::async_read(*itsSocket, asio::buffer(itsHeader.get_buffer()),
                          [this, self]
                                  (const boost::system::error_code & ec,
                                   std::size_t bytes_transferred)
                          {
-                             this->parse_to_packet(ec, bytes_transferred);
+                             this->on_read_header(ec, bytes_transferred);
                          });
     }
 
-
-    void parse_to_packet(const boost::system::error_code & ec, std::size_t bytes_transferred){
+    void on_read_header(const boost::system::error_code & ec,
+                        std::size_t bytes_transferred
+    ){
         if (!ec.value()) {
-            std::cout << "Bytes Transferred: " << bytes_transferred << std::endl;
-            std::cout << std::string(itsSomeBuf.data(), itsSomeBuf.size()) << std::endl;
+            std::cout << "Header read bytes transferred: " << bytes_transferred << std::endl
+                      << "Metadata size: " << itsHeader.get_metadata_size() << std::endl
+                      << "Data size: " << itsHeader.get_data_size() << std::endl;
 
-            itsTaskPacker->eat(itsSomeBuf);
+            itsBody.set_header(itsHeader);
 
-            this->fill_the_buffer();
+            auto self(shared_from_this());
+            asio::async_read(*itsSocket, asio::buffer(itsBody.get_buffer(), itsBody.get_sum_size()),
+                             [this, self]
+                                     (const boost::system::error_code & ec,
+                                      std::size_t bytes_transferred)
+                             {
+                                 this->on_read_body(ec, bytes_transferred);
+                             });
         }
         else {
             std::cout << "Error occured! Error code = "
                       << ec.value()
                       << ". Message: " << ec.message();
         }
+    }
 
+    void on_read_body(const boost::system::error_code & ec,
+                        std::size_t bytes_transferred){
+        if (!ec.value()) {
+            std::cout << "Body read bytes transferred: " << bytes_transferred << std::endl
+                      << "Metadata: " << itsBody.get_metadata() << std::endl
+                      << "Data: " << itsBody.get_data() << std::endl;
+
+            this->read_header();
+        }
+        else {
+            std::cout << "Error occured! Error code = "
+                      << ec.value()
+                      << ". Message: " << ec.message();
+        }
     }
 
 };
