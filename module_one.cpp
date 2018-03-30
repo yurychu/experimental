@@ -30,9 +30,10 @@ public:
         asio::io_service itsIos;
 
         auto client = std::make_shared<cmt::Client>(itsIos);
-        auto func_part = std::make_shared<cmt::FunctionalPart>();
+        auto func_part = std::make_shared<cmt::FunctionalPart>(client);
         auto server = std::make_shared<cmt::Server>(itsIos, itsName, func_part);
 
+        func_part->run_threads();
         server->init_to_run();
 
         itsIos.run();
@@ -43,7 +44,7 @@ public:
 
 int main()
 {
-    Module module("module_one");
+    Module module("module_three");
     module.start();
 
     return 0;
