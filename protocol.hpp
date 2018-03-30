@@ -10,9 +10,9 @@ namespace prtcl {
     constexpr u_char START_WORD_LEN_BYTES = 8;
     constexpr u_char META_DATA_LEN_BYTES = 8;
     constexpr u_char DATA_LEN_BYTES = 8;
-    constexpr u_char SUM_LENGHT_BYTES = START_WORD_LEN_BYTES + META_DATA_LEN_BYTES + DATA_LEN_BYTES;
+    constexpr u_char SUM_LENGTH_BYTES = START_WORD_LEN_BYTES + META_DATA_LEN_BYTES + DATA_LEN_BYTES;
 
-    using HeaderBufferType = std::array<char, SUM_LENGHT_BYTES>;
+    using HeaderBufferType = std::array<char, SUM_LENGTH_BYTES>;
 
     class Header
     {

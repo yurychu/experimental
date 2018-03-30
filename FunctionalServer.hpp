@@ -143,6 +143,7 @@ namespace communication
             if(acc_name.find('.') == std::string::npos){
                 acc_name += ".socket";
             }
+            acc_name = "./sockets/" + acc_name;
             ::unlink(acc_name.c_str());
             ipc_protocol::endpoint ep(acc_name);
 

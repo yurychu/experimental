@@ -39,7 +39,7 @@ namespace communication
             }
             std::cout << "Create new sesstion with: " << destination_name << std::endl;
 
-            ipc_protocol::endpoint ep(destination_name);
+            ipc_protocol::endpoint ep("./sockets/" + destination_name);
             socket->async_connect(ep,
                                   [this]
                                           (const boost::system::error_code & ec)
