@@ -20,7 +20,11 @@ include_directories(
 )
 
 
-add_executable(experimental_system main.cpp)
+add_executable(
+        main
+        main.cpp
+)
+
 add_executable(
         stream_server
         stream_server.cpp

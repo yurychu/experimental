@@ -27,6 +27,9 @@ namespace communication
         std::string itsDestinationName;
         std::shared_ptr<ipc_protocol::socket> itsSocket;
 
+        prtcl::Header itsHeader;
+        prtcl::Body itsBody;
+
     public:
         ClientSession(std::string destination_name,
                       std::shared_ptr<ipc_protocol::socket> socket)
@@ -37,7 +40,7 @@ namespace communication
             if(destination_name.find('.') == std::string::npos){
                 destination_name += ".socket";
             }
-            std::cout << "Create new sesstion with: " << destination_name << std::endl;
+            std::cout << "Create new session with: " << destination_name << std::endl;
 
             ipc_protocol::endpoint ep("./sockets/" + destination_name);
             socket->async_connect(ep,
@@ -50,17 +53,66 @@ namespace communication
 
         ~ClientSession() = default;
 
-        void make_request(const prtcl::Body & body)
+        void make_request(const std::string & content)
         {
+            itsBody.set_as_empty();
+            itsBody.add_content(content);
+            itsHeader.set_body_length(itsBody.get_length());
+
+            asio::async_write(*itsSocket,
+                              asio::buffer(itsHeader.get_buffer()),
+                              [this]
+                                      (const boost::system::error_code & ec, size_t bytes_transferred)
+                              {
+                                  this->on_header_written(ec, bytes_transferred);
+                              }
+            );
 
         }
 
     private:
+
         void on_connected(const boost::system::error_code & ec)
         {
             std::cout << "on_connected: " << std::endl;
             if (!ec.value()){
                 std::cout << "Connected without errors." << std::endl;
+            }
+            else {
+                std::cout<< "Error occured! Error code = "
+                         << ec.value()
+                         << ". Message: " << ec.message() << std::endl;
+            }
+        }
+
+        void on_header_written(const boost::system::error_code & ec, size_t bytes_transferred)
+        {
+            std::cout << "on_header_written: " << std::endl;
+            if (!ec.value()){
+                std::cout << "Bytes transferred: " << bytes_transferred << std::endl;
+
+                asio::async_write(*itsSocket,
+                                  asio::buffer(itsBody.get_buffer(), itsBody.get_length()),
+                                  [this]
+                                          (const boost::system::error_code & ec, size_t bytes_transferred)
+                                  {
+                                      this->on_body_written(ec, bytes_transferred);
+                                  }
+                );
+            }
+            else {
+                std::cout<< "Error occured! Error code = "
+                         << ec.value()
+                         << ". Message: " << ec.message() << std::endl;
+            }
+        }
+
+        void on_body_written(const boost::system::error_code & ec, size_t bytes_transferred)
+        {
+            std::cout << "on_body_written: " << std::endl;
+            if (!ec.value()){
+                std::cout << "Bytes transferred: " << bytes_transferred << std::endl;
+
             }
             else {
                 std::cout<< "Error occured! Error code = "
@@ -85,15 +137,16 @@ namespace communication
 
         ~Client() = default;
 
-        void send_data_to(const std::string & destination, const prtcl::Body & body)
+        void send_data_to(const std::string& destination, const std::string& content)
         {
             auto it = itsSessions.find(destination);
             if (it != itsSessions.end()){
-                it->second->make_request(body);
+                it->second->make_request(content);
             }
             else {
                 auto sock = std::make_shared<ipc_protocol::socket>(itsIos);
                 itsSessions[destination] = std::make_shared<ClientSession>(destination, sock);
+                itsSessions[destination]->make_request(content);
             }
 
         }

@@ -7,17 +7,17 @@
 
 namespace prtcl {
 
-    constexpr u_char START_WORD_LEN_BYTES = 8;
-    constexpr u_char META_DATA_LEN_BYTES = 8;
-    constexpr u_char DATA_LEN_BYTES = 8;
-    constexpr u_char SUM_LENGTH_BYTES = START_WORD_LEN_BYTES + META_DATA_LEN_BYTES + DATA_LEN_BYTES;
+    using BODY_LENGTH_TYPE = size_t;
 
-    using HeaderBufferType = std::array<char, SUM_LENGTH_BYTES>;
+    constexpr size_t HEADER_BUF_LENGTH = sizeof(BODY_LENGTH_TYPE);
+
+
+    using HeaderBufferType = std::array<char, HEADER_BUF_LENGTH>;
 
     class Header
     {
     private:
-        HeaderBufferType itsBuffer;
+        HeaderBufferType itsBuffer ;
 
     public:
         Header() = default;
@@ -28,16 +28,18 @@ namespace prtcl {
             return itsBuffer;
         }
 
-        size_t get_metadata_size() const
+        BODY_LENGTH_TYPE get_body_length() const
         {
-            std::string res(itsBuffer.data() + START_WORD_LEN_BYTES, META_DATA_LEN_BYTES);
-            return std::stoul(res);
+            // Very naive. Only for one run machine and for prototyping :-)
+            return *(static_cast<const size_t *>(static_cast<const void*>(itsBuffer.data())));
         }
 
-        size_t get_data_size() const
+        void set_body_length(BODY_LENGTH_TYPE len)
         {
-            std::string res(itsBuffer.data() + START_WORD_LEN_BYTES + META_DATA_LEN_BYTES, DATA_LEN_BYTES);
-            return std::stoul(res);
+            // Very naive. Only for one run machine and for prototyping :-)
+            std::copy(static_cast<const char*>(static_cast<const void*>(&len)),
+                      static_cast<const char*>(static_cast<const void*>(&len)) + sizeof(BODY_LENGTH_TYPE),
+                      itsBuffer.data());
         }
 
     };
@@ -48,50 +50,47 @@ namespace prtcl {
     class Body
     {
     private:
-        BodyBufferType itsBuffer;
-        size_t itsMetadataSize;
-        size_t itsDataSize;
+        BODY_LENGTH_TYPE itsFilledPartSize;
+
+        std::shared_ptr<BodyBufferType> itsBuffer;
 
     public:
         Body()
-                : itsBuffer(),
-                  itsMetadataSize(0),
-                  itsDataSize(0)
+                : itsFilledPartSize(0),
+                  itsBuffer(std::make_shared<BodyBufferType>())
         {
         }
 
-        explicit Body(const Header & header)
-                : itsBuffer(),
-                  itsMetadataSize(header.get_metadata_size()),
-                  itsDataSize(header.get_data_size())
+        void add_content(const std::string &content)
         {
-        }
-
-        void set_header(const Header & header)
-        {
-            itsMetadataSize = header.get_metadata_size();
-            itsDataSize = header.get_data_size();
-        }
-
-        size_t get_sum_size() const
-        {
-            return itsMetadataSize + itsDataSize;
+            content.copy(itsBuffer->data() + itsFilledPartSize, content.length());
+            itsFilledPartSize += content.length();
         }
 
         BodyBufferType & get_buffer()
         {
-            return itsBuffer;
-        }
-
-        std::string get_metadata() const
-        {
-            return std::string(itsBuffer.data(), itsMetadataSize);
+            return *itsBuffer;
         }
 
         std::string get_data() const
         {
-            return std::string(itsBuffer.data() + itsMetadataSize, itsDataSize);
+            return std::string(itsBuffer->data(), itsFilledPartSize);
         }
+
+        void set_as_empty(){
+            itsFilledPartSize = 0;
+        }
+
+        void set_length(BODY_LENGTH_TYPE len)
+        {
+            itsFilledPartSize = len;
+        }
+
+        BODY_LENGTH_TYPE get_length()
+        {
+            return itsFilledPartSize;
+        }
+
 
         ~Body() = default;
     };

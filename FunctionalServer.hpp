@@ -83,13 +83,12 @@ namespace communication
         ){
             if (!ec.value()) {
                 std::cout << "Header read bytes transferred: " << bytes_transferred << std::endl
-                          << "Metadata size: " << itsHeader.get_metadata_size() << std::endl
-                          << "Data size: " << itsHeader.get_data_size() << std::endl;
+                          << "Metadata size: " << itsHeader.get_body_length() << std::endl;
 
-                itsBody.set_header(itsHeader);
+                itsBody.set_length(itsHeader.get_body_length());
 
                 auto self(shared_from_this());
-                asio::async_read(*itsSocket, asio::buffer(itsBody.get_buffer(), itsBody.get_sum_size()),
+                asio::async_read(*itsSocket, asio::buffer(itsBody.get_buffer(), itsBody.get_length()),
                                  [this, self]
                                          (const boost::system::error_code & ec,
                                           std::size_t bytes_transferred)
@@ -108,11 +107,10 @@ namespace communication
                           std::size_t bytes_transferred){
             if (!ec.value()) {
                 std::cout << "Body read bytes transferred: " << bytes_transferred << std::endl
-                          << "Metadata: " << itsBody.get_metadata() << std::endl
                           << "Data: " << itsBody.get_data() << std::endl;
 
                 // make functionality
-                itsFunctionalPart->push(itsBody.get_metadata(), itsBody.get_data());
+                itsFunctionalPart->push(itsBody.get_data());
 
                 this->read_header();
             }

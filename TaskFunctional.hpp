@@ -25,11 +25,14 @@ namespace communication {
         {
         }
 
-        void do_work()
+        void do_work(std::shared_ptr<Client> & client)
         {
             std::cout << "Do work Meta: " << itsMeta << "\n"
                     << "Data: " << itsData
                     << std::endl;
+
+            client->send_data_to("module_three", itsData);
+
         }
 
         bool its_cancelling()
@@ -63,11 +66,11 @@ namespace communication {
             }
         }
 
-        void push(std::string param1, std::string param2)
+        void push(std::string param)
         {
             std::unique_lock<std::mutex> lock(itsMutex);
-            std::cout << "Puhsed to Custom functional part: " << param1 << " " << param2 << std::endl;
-            itsTaskQueue.emplace(param1, param2);
+            std::cout << "Puhsed to Custom functional part: " << param << std::endl;
+            itsTaskQueue.emplace(param, param);
             itsCondVariable.notify_one();
         }
 
@@ -94,7 +97,7 @@ namespace communication {
 
                             lock.unlock();
 
-                            task.do_work();
+                            task.do_work(itsClient);
 
                             if (task.its_cancelling()){
                                 std::cout << "This task is make cancel" << std::endl;
@@ -105,8 +108,6 @@ namespace communication {
                         u_int sleep_value = 15;
                         std::cout << "Running some thread, sleep value: " << sleep_value << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(sleep_value));
-                        std::cout << "Ending sleeping for some thread" << std::endl;
-                        itsClient->send_data_to("module_two", prtcl::Body());
                     }
                     );
             itsThreads.push_back(some_thread);

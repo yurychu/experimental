@@ -34,6 +34,7 @@ public:
         auto server = std::make_shared<cmt::Server>(itsIos, itsName, func_part);
 
         func_part->run_threads();
+//        func_part->push("say_hello");  // create task for doing
         server->init_to_run();
 
         itsIos.run();
@@ -44,7 +45,7 @@ public:
 
 int main()
 {
-    Module module("module_three");
+    Module module("module_sender");
     module.start();
 
     return 0;
