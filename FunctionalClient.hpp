@@ -31,6 +31,7 @@ namespace communication
         prtcl::Body itsBody;
 
     public:
+
         ClientSession(std::string destination_name,
                       std::shared_ptr<ipc_protocol::socket> socket)
                 : itsDestinationName(destination_name),

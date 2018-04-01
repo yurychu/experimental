@@ -15,29 +15,24 @@ namespace communication {
     class Task
     {
     private:
-        std::string itsMeta;
         std::string itsData;
 
     public:
-        Task(std::string meta, std::string data)
-                : itsMeta(std::move(meta)),
-                  itsData(std::move(data))
+        explicit Task(std::string data)
+                : itsData(std::move(data))
         {
         }
 
         void do_work(std::shared_ptr<Client> & client)
         {
-            std::cout << "Do work Meta: " << itsMeta << "\n"
-                    << "Data: " << itsData
-                    << std::endl;
+            std::cout << "Data: " << itsData << std::endl;
 
             client->send_data_to("module_three", itsData);
-
         }
 
         bool its_cancelling()
         {
-            return itsMeta == "cancel";
+            return itsData == "cancel";
         }
 
     };
@@ -70,7 +65,7 @@ namespace communication {
         {
             std::unique_lock<std::mutex> lock(itsMutex);
             std::cout << "Puhsed to Custom functional part: " << param << std::endl;
-            itsTaskQueue.emplace(param, param);
+            itsTaskQueue.emplace(param);
             itsCondVariable.notify_one();
         }
 
