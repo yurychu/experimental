@@ -25,6 +25,16 @@ add_executable(
         main.cpp
 )
 
+target_link_libraries(
+        main
+        boost_filesystem
+        boost_system
+        opencv_core
+        opencv_imgproc
+        opencv_imgcodecs
+        opencv_highgui
+)
+
 add_executable(
         stream_server
         stream_server.cpp

@@ -27,7 +27,7 @@ namespace communication
     public:
         void push(std::string param1, std::string param2)
         {
-            std::cout << "Puhsed to functional part: " << param1 << " " << param2 << std::endl;
+            std::cout << "Pushed to functional part: " << param1 << " " << param2 << std::endl;
         }
     };
 
