@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 find_package(Boost 1.72.0 COMPONENTS program_options REQUIRED)
 
 
+#client
+
 add_executable(
         client
         code_parts/client.cpp
@@ -44,6 +46,51 @@ target_link_directories(
 
 target_link_libraries(
         client
+        PRIVATE
+        Boost::program_options
+)
+
+
+# server
+
+add_executable(
+        server
+        code_parts/server.cpp
+        code_parts/src/server/RunServer.hpp
+        code_parts/src/server/RunServer.cpp
+)
+
+target_compile_definitions(
+        server
+        PRIVATE
+        #        BOOST_LOG_ENABLE_WARNINGS
+        #        BOOST_THREAD_DYN_LINK
+        #        BOOST_LOG_DYN_LINK
+        BOOST_ALL_DYN_LINK
+)
+
+if (WIN32)
+    target_compile_definitions(
+            server
+            PRIVATE
+            _WIN32_WINNT=0x0A00  # windows 10 only
+    )
+endif()
+
+target_include_directories(
+        server
+        PRIVATE
+        code_parts/src/server
+)
+
+target_link_directories(
+        server
+        PRIVATE
+        ${Boost_LIBRARY_DIRS}
+)
+
+target_link_libraries(
+        server
         PRIVATE
         Boost::program_options
 )

@@ -4,6 +4,6 @@
 
 int main(int argc, char * argv [])
 {
-    run_client_1();
+    run_client_3();
     return 0;
 }
