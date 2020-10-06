@@ -32,3 +32,29 @@ void run_server_2()
     }
 
 }
+
+
+void run_server_3()
+{
+    uint16_t port_num = 3333;
+    asio::ip::address ip_addr = asio::ip::address_v4::any();
+
+    asio::ip::tcp::endpoint ep { ip_addr, port_num };
+    asio::ip::tcp protocol = ep.protocol(); // v4 from ip_addr
+
+    asio::io_service ios;
+    asio::ip::tcp::acceptor acc { ios };
+    boost::system::error_code ec;
+    acc.open(protocol, ec);
+    if (ec.value() != 0){
+        std::cout << "Fail open acceptor, err code: " << ec.value() << ", msg: " << ec.message() << std::endl;
+        return;
+    }
+
+    acc.bind(ep, ec);
+    if (ec.value() != 0){
+        std::cout << "Fail bind acc to ep, code: " << ec.value() << ", msg: " << ec.message() << std::endl;
+        return;
+    }
+
+}

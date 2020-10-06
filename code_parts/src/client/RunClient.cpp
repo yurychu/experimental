@@ -55,5 +55,11 @@ void run_client_3()
     asio::ip::tcp::resolver::iterator it = rslvr.resolve(res_query, ec);
     if (ec.value() != 0){
         std::cout << "Failed to resolve DNS name: " << ec.value() << ", Msg: " << ec.message() << std::endl;
+        return;
     }
+    asio::ip::tcp::resolver::iterator it_end;
+    for (; it != it_end; ++it){
+        asio::ip::tcp::endpoint ep = it->endpoint();
+    }
+
 }
