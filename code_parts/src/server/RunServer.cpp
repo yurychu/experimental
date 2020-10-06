@@ -57,4 +57,6 @@ void run_server_3()
         return;
     }
 
+    std::cout << "ep.addr() to string: " << ep.address().to_string() << std::endl;
+
 }

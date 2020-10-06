@@ -63,3 +63,33 @@ void run_client_3()
     }
 
 }
+
+void run_client_4()
+{
+    std::string raw_ip_addr = "127.0.0.1";
+    uint16_t port_num = 8002;
+    boost::system::error_code ec;
+
+    asio::ip::address ip_addr = asio::ip::address::from_string(raw_ip_addr, ec);
+    if (ec){
+        std::cout << "Fail create ip addr from string: " << ec.value() << ", msg: " << ec.message() << std::endl;
+        return;
+    }
+    asio::ip::tcp::endpoint ep { ip_addr, port_num };
+    asio::ip::tcp protocol = ep.protocol();
+    asio::io_service ios{};
+
+    asio::ip::tcp::socket sock { ios };
+    sock.open(protocol, ec);
+    if (ec){
+        std::cout << "Fail to open sock, code: " << ec.value() << ", msg: " << ec.message() << std::endl;
+        return;
+    }
+
+    sock.connect(ep, ec);
+    if (ec){
+        std::cout << "Fail connect to ep, code: " << ec.value() << ", msg: " << ec.message() << std::endl;
+        return;
+    }
+
+}
