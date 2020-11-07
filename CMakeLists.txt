@@ -58,6 +58,9 @@ add_executable(
         code_parts/client.cpp
         code_parts/src/client/RunClient.hpp
         code_parts/src/client/RunClient.cpp
+
+        code_parts/src/common/PerformSome.hpp
+        code_parts/src/common/PerformSome.cpp
 )
 
 target_compile_definitions(
@@ -81,6 +84,7 @@ target_include_directories(
         client
         PRIVATE
         code_parts/src/client
+        code_parts/src/common
 )
 
 target_link_directories(

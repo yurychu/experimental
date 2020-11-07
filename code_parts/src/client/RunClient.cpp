@@ -8,6 +8,8 @@
 #include <boost/asio.hpp>
 namespace asio = boost::asio;
 
+#include <PerformSome.hpp>
+
 
 void run_client_1()
 {
@@ -106,4 +108,7 @@ void run_client_4()
     }
     // has also asio::connect(sock, it); iterate over resolved eps and try connect, no need open() before call, v4 or v6
 
+    std::cout << "Write to sock... " << std::endl;
+    write_to_sock(sock, "Hello");
+    std::cout << "Done." << std::endl;
 }

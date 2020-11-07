@@ -348,11 +348,11 @@ int main13(){
 float doMultiplication (float num1, float num2 ) {
     return num1 * num2; }
 
-typedef float(*pt2Func)(float, float);
+typedef float(pt2Func)(float, float);
 
-pt2Func *myFnPtr = &doMultiplication;
+pt2Func *myFnPtr = doMultiplication;
 
-float result = (*myFnPtr)(2.0, 5.1);
+float result = myFnPtr(2.0, 5.1);
 
 
 class Storage

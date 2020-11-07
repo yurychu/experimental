@@ -70,7 +70,7 @@ void run_server_3()
     // accept is blocking call of executing thread
 
     std::cout << "To sleep for ..." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds{99});
+    std::this_thread::sleep_for(std::chrono::seconds{5});
 
 
     std::cout << "End." << std::endl;

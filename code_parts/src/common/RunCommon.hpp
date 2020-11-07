@@ -3,3 +3,4 @@
 
 void run_common_1();
 void run_common_2();
+void run_common_3();
