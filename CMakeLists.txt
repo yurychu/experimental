@@ -107,6 +107,9 @@ add_executable(
         code_parts/server.cpp
         code_parts/src/server/RunServer.hpp
         code_parts/src/server/RunServer.cpp
+
+        code_parts/src/common/PerformSome.hpp
+        code_parts/src/common/PerformSome.cpp
 )
 
 target_compile_definitions(
@@ -130,6 +133,7 @@ target_include_directories(
         server
         PRIVATE
         code_parts/src/server
+        code_parts/src/common
 )
 
 target_link_directories(

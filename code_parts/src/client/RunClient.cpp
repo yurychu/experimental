@@ -80,7 +80,7 @@ void run_client_3()
 void run_client_4()
 {
     std::string raw_ip_addr = "127.0.0.1";
-    uint16_t port_num = 3333;
+    uint16_t port_num = 8003;
     boost::system::error_code ec;
 
     asio::ip::address ip_addr = asio::ip::address::from_string(raw_ip_addr, ec);
@@ -109,6 +109,6 @@ void run_client_4()
     // has also asio::connect(sock, it); iterate over resolved eps and try connect, no need open() before call, v4 or v6
 
     std::cout << "Write to sock... " << std::endl;
-    write_to_sock(sock, "Hello");
+    write_to_sock(sock, "Hello Im biggest seven bytes");
     std::cout << "Done." << std::endl;
 }

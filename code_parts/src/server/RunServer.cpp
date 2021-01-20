@@ -9,6 +9,8 @@
 #include <boost/asio.hpp>
 namespace asio = boost::asio;
 
+#include <PerformSome.hpp>
+
 
 void run_server_1()
 {
@@ -40,7 +42,7 @@ void run_server_2()
 
 void run_server_3()
 {
-    uint16_t port_num = 3333;
+    uint16_t port_num = 8003;
     asio::ip::address ip_addr = asio::ip::address_v4::any();
 
     asio::ip::tcp::endpoint ep { ip_addr, port_num };
@@ -62,12 +64,16 @@ void run_server_3()
     }
 
     const int BACKLOG_SIZE = 20;
-    acc.listen(BACKLOG_SIZE); // switch acc socket to listen mode, OS not rejects requests here.
+    acc.listen(BACKLOG_SIZE);  // switch acc socket to listen mode, OS not rejects requests here.
 
     // new active socket for communicate concrete clients
     asio::ip::tcp::socket sock { ios };
     acc.accept(sock); // accept request to this socket from requests queue.
     // accept is blocking call of executing thread
+
+    const auto read_result = read_from_sock(sock);
+    std::cout << "Read from sock result: " << read_result << std::endl;
+
 
     std::cout << "To sleep for ..." << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds{5});
